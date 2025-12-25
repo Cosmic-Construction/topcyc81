@@ -109,12 +109,11 @@ class CircleTopology:
         
         # Add contribution from intersecting pairs
         # Each pair intersection creates a lens-shaped region
-        for k in range(1, n):
+        for k in range(2, n):
             # k circles form intersecting pair, rest are distributed
-            if k >= 2:
-                inner = CircleTopology.pairs_may_intersect(k - 2)
-                outer = CircleTopology.pairs_may_intersect(n - k)
-                result += inner * outer
+            inner = CircleTopology.pairs_may_intersect(k - 2)
+            outer = CircleTopology.pairs_may_intersect(n - k)
+            result += inner * outer
         
         return result
     
@@ -155,18 +154,16 @@ class CircleTopology:
         
         # Add pair intersection configurations
         for k in range(2, n + 1):
-            if k >= 2:
-                inner = CircleTopology.triples_may_intersect(k - 2)
-                outer = CircleTopology.triples_may_intersect(n - k)
-                result += inner * outer
+            inner = CircleTopology.triples_may_intersect(k - 2)
+            outer = CircleTopology.triples_may_intersect(n - k)
+            result += inner * outer
         
         # Add triple intersection configurations
         # Three circles intersecting create a central region
         for k in range(3, n + 1):
-            if k >= 3:
-                inner = CircleTopology.triples_may_intersect(k - 3)
-                outer = CircleTopology.triples_may_intersect(n - k)
-                result += inner * outer
+            inner = CircleTopology.triples_may_intersect(k - 3)
+            outer = CircleTopology.triples_may_intersect(n - k)
+            result += inner * outer
         
         return result
     
