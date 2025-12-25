@@ -1,19 +1,20 @@
 # topcyc81 - Topologically Distinct Sets of Non-intersecting Circles
 
-Implementation of algorithms for counting topologically distinct arrangements of circles in the plane, based on the paper ["Topologically Distinct Sets of Non-intersecting Circles in the Plane"](https://arxiv.org/abs/1603.00077) (arXiv:1603.00077).
+Implementation of algorithms for counting topologically distinct arrangements of circles in the plane, based on the paper ["Topologically Distinct Sets of Non-intersecting Circles in the Plane"](https://arxiv.org/abs/1603.00077) by Richard J. Mathar (arXiv:1603.00077).
 
 ## Overview
 
 This project provides computational tools to analyze and count different topological configurations of circles in the plane under various intersection constraints. The implementation explores three scenarios:
 
-1. **Non-intersecting circles**: Circles are completely separated (nested or disjoint)
-2. **Pairs may intersect**: At most 2 circles can intersect at any point
-3. **Triples may intersect**: At most 3 circles can intersect at any point
+1. **Non-intersecting circles**: Circles are completely separated (nested or disjoint) - corresponds to rooted trees
+2. **Pairs may intersect**: Exactly one pair of circles intersects at two points
+3. **Triples may intersect**: Up to three circles can mutually intersect
 
 ## Mathematical Background
 
 The problem of counting topologically distinct circle arrangements is related to:
-- **Catalan numbers**: Count non-intersecting nested structures
+- **Rooted trees (OEIS A000081)**: Count non-intersecting nested structures
+- **Catalan numbers**: Special case for well-formed parentheses
 - **Matching forests**: Represent intersection patterns as rooted forests
 - **Generating functions**: Encode the counting sequences
 - **Recurrence relations**: Define recursive structure of the counts
@@ -21,9 +22,9 @@ The problem of counting topologically distinct circle arrangements is related to
 ### Key Results
 
 For *n* circles:
-- **Non-intersecting**: Follows the Catalan sequence (1, 1, 2, 5, 14, 42, 132, ...)
-- **Pairs intersecting**: Enhanced sequence (1, 1, 2, 6, 19, 64, 225, 816, ...)
-- **Triples intersecting**: Further enhanced (1, 1, 2, 8, 27, 99, 378, 1484, ...)
+- **Non-intersecting (|C_n|)**: Rooted trees sequence (1, 1, 2, 4, 9, 20, 48, 115, 286, 719, ...)  [OEIS A000081]
+- **Pairs intersecting (|X_n|)**: (0, 1, 4, 15, 50, 162, 506, 1558, 4727, 14227, ...) [OEIS A261070]
+- **Triples intersecting (|³X_n|)**: (0, 1, 3, 14, 61, 252, 1019, 4127, 17242, 74007, ...) [OEIS A250001]
 
 As expected, allowing more complex intersections increases the number of distinct topologies.
 

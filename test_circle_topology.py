@@ -16,6 +16,18 @@ class TestCircleTopology(unittest.TestCase):
         """Set up test fixtures."""
         self.topology = CircleTopology()
     
+    def test_rooted_trees(self):
+        """Test that rooted trees are computed correctly (OEIS A000081)."""
+        # First terms of A000081
+        expected = [0, 1, 1, 2, 4, 9, 20, 48, 115, 286]
+        for n, expected_value in enumerate(expected):
+            with self.subTest(n=n):
+                self.assertEqual(
+                    CircleTopology.rooted_trees(n),
+                    expected_value,
+                    f"Rooted trees A000081({n}) should be {expected_value}"
+                )
+    
     def test_catalan_numbers(self):
         """Test that Catalan numbers are computed correctly."""
         # First 10 Catalan numbers
@@ -29,14 +41,16 @@ class TestCircleTopology(unittest.TestCase):
                 )
     
     def test_non_intersecting_circles(self):
-        """Test counting of non-intersecting circles."""
-        # Should equal Catalan numbers
-        for n in range(10):
+        """Test counting of non-intersecting circles (based on rooted trees)."""
+        # Should equal rooted trees with n+1 nodes (A000081 shifted)
+        # n circles -> A000081(n+1)
+        expected = [1, 1, 2, 4, 9, 20, 48, 115, 286, 719]  # A000081 starting from n=1
+        for n, expected_value in enumerate(expected):
             with self.subTest(n=n):
                 self.assertEqual(
                     self.topology.non_intersecting_circles(n),
-                    CircleTopology.catalan_number(n),
-                    f"Non-intersecting circles should equal Catalan numbers for n={n}"
+                    expected_value,
+                    f"Non-intersecting circles for n={n} should be {expected_value}"
                 )
     
     def test_pairs_may_intersect_base_cases(self):

@@ -24,6 +24,42 @@ class CircleTopology:
     
     @staticmethod
     @lru_cache(maxsize=None)
+    def rooted_trees(n: int) -> int:
+        """
+        Compute the number of unlabeled rooted trees with n nodes (OEIS A000081).
+        
+        This counts the topologically distinct arrangements of n-1 non-intersecting
+        circles in the plane. The recurrence is based on the theory of rooted trees.
+        
+        Args:
+            n: The number of nodes in the tree
+            
+        Returns:
+            The number of unlabeled rooted trees with n nodes
+        """
+        if n == 0:
+            return 0
+        if n == 1:
+            return 1
+        if n == 2:
+            return 1
+        
+        # Use the recurrence relation for rooted trees
+        # a(n) = (1/(n-1)) * sum_{i=1}^{n-1} a(i) * (sum_{d|n-i} d * a(d))
+        result = 0
+        for i in range(1, n):
+            # Compute sum of d * a(d) for all divisors d of (n-i)
+            divisor_sum = 0
+            remainder = n - i
+            for d in range(1, remainder + 1):
+                if remainder % d == 0:
+                    divisor_sum += d * CircleTopology.rooted_trees(d)
+            result += CircleTopology.rooted_trees(i) * divisor_sum
+        
+        return result // (n - 1)
+    
+    @staticmethod
+    @lru_cache(maxsize=None)
     def catalan_number(n: int) -> int:
         """
         Compute the n-th Catalan number.
@@ -51,8 +87,8 @@ class CircleTopology:
         """
         Count topologically distinct sets of n non-intersecting circles.
         
-        This is the base case where no circles intersect at all.
-        The count equals the n-th Catalan number.
+        This corresponds to counting unlabeled rooted trees with n+1 nodes (OEIS A000081),
+        since n non-intersecting circles form a tree structure.
         
         Args:
             n: Number of circles
@@ -60,7 +96,8 @@ class CircleTopology:
         Returns:
             Number of topologically distinct arrangements
         """
-        return CircleTopology.catalan_number(n)
+        # n circles correspond to rooted trees with n+1 nodes
+        return CircleTopology.rooted_trees(n + 1)
     
     @staticmethod
     @lru_cache(maxsize=None)
