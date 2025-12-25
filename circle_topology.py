@@ -152,14 +152,14 @@ class CircleTopology:
             result += left * right
         
         # Add pair intersection configurations
-        for k in range(2, n + 1):
+        for k in range(2, n):
             inner = CircleTopology.triples_may_intersect(k - 2)
             outer = CircleTopology.triples_may_intersect(n - k)
             result += inner * outer
         
         # Add triple intersection configurations
         # Three circles intersecting create a central region
-        for k in range(3, n + 1):
+        for k in range(3, n):
             inner = CircleTopology.triples_may_intersect(k - 3)
             outer = CircleTopology.triples_may_intersect(n - k)
             result += inner * outer
