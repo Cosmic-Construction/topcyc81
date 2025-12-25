@@ -133,13 +133,17 @@ class TestCircleTopology(unittest.TestCase):
 class TestRecurrenceRelations(unittest.TestCase):
     """Test the recurrence relations used in the algorithms."""
     
+    def setUp(self):
+        """Set up test fixtures."""
+        self.topology = CircleTopology()
+    
     def test_catalan_recurrence(self):
         """Test that Catalan numbers satisfy their recurrence relation."""
         # C(n) = sum(C(i) * C(n-1-i)) for i=0 to n-1
         for n in range(2, 8):
-            expected = CircleTopology.catalan_number(n)
+            expected = self.topology.catalan_number(n)
             computed = sum(
-                CircleTopology.catalan_number(i) * CircleTopology.catalan_number(n - 1 - i)
+                self.topology.catalan_number(i) * self.topology.catalan_number(n - 1 - i)
                 for i in range(n)
             )
             self.assertEqual(computed, expected,
@@ -148,7 +152,7 @@ class TestRecurrenceRelations(unittest.TestCase):
     def test_pairs_recurrence_structure(self):
         """Test that pairs intersection follows a valid recurrence."""
         # The function should produce increasing values with n (starting from n=2)
-        values = [CircleTopology.pairs_may_intersect(n) for n in range(8)]
+        values = [self.topology.pairs_may_intersect(n) for n in range(8)]
         for i in range(2, len(values)):
             self.assertGreater(values[i], values[i-1],
                 f"Count should increase with n: n={i}")
@@ -156,7 +160,7 @@ class TestRecurrenceRelations(unittest.TestCase):
     def test_triples_recurrence_structure(self):
         """Test that triples intersection follows a valid recurrence."""
         # The function should produce increasing values with n (starting from n=2)
-        values = [CircleTopology.triples_may_intersect(n) for n in range(8)]
+        values = [self.topology.triples_may_intersect(n) for n in range(8)]
         for i in range(2, len(values)):
             self.assertGreater(values[i], values[i-1],
                 f"Count should increase with n: n={i}")
