@@ -138,16 +138,16 @@ class TestRecurrenceRelations(unittest.TestCase):
         self.topology = CircleTopology()
     
     def test_catalan_recurrence(self):
-        """Test that Catalan numbers satisfy their recurrence relation."""
-        # C(n) = sum(C(i) * C(n-1-i)) for i=0 to n-1
-        for n in range(2, 8):
-            expected = self.topology.catalan_number(n)
-            computed = sum(
-                self.topology.catalan_number(i) * self.topology.catalan_number(n - 1 - i)
-                for i in range(n)
-            )
+        """Test that Catalan numbers match known values."""
+        # Known Catalan numbers for verification
+        known_catalan = {
+            0: 1, 1: 1, 2: 2, 3: 5, 4: 14, 5: 42, 6: 132, 7: 429,
+            8: 1430, 9: 4862, 10: 16796
+        }
+        for n, expected in known_catalan.items():
+            computed = self.topology.catalan_number(n)
             self.assertEqual(computed, expected,
-                f"Catalan recurrence should hold for n={n}")
+                f"Catalan number C({n}) should be {expected}")
     
     def test_pairs_recurrence_structure(self):
         """Test that pairs intersection follows a valid recurrence."""

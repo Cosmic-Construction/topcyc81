@@ -22,10 +22,6 @@ class CircleTopology:
     distinct arrangements of circles with different intersection constraints.
     """
     
-    def __init__(self):
-        """Initialize the CircleTopology analyzer."""
-        pass
-    
     @staticmethod
     @lru_cache(maxsize=None)
     def catalan_number(n: int) -> int:
