@@ -1,6 +1,6 @@
 ---
 name: "mathar.tex"
-description: ""
+description: "Topologically Distinct Sets of Non-intersecting Circles in the Plane"
 ---
 
 \documentclass[]{amsart}
