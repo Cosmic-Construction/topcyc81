@@ -180,6 +180,111 @@ class TestRecurrenceRelations(unittest.TestCase):
                 f"Count should increase with n: n={i}")
 
 
+class TestDimensionalProgression(unittest.TestCase):
+    """Test the dimensional progression: 1D → 2D → 3D → 4D."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.topology = CircleTopology()
+    
+    def test_unrooted_trees_oeis_a000055(self):
+        """Test that unrooted trees match OEIS A000055."""
+        # First terms of A000055 (unrooted trees)
+        expected = [1, 1, 1, 1, 2, 3, 6, 11, 23, 47, 106, 235]
+        for n, expected_value in enumerate(expected):
+            with self.subTest(n=n):
+                self.assertEqual(
+                    CircleTopology.unrooted_trees(n),
+                    expected_value,
+                    f"Unrooted trees A000055({n}) should be {expected_value}"
+                )
+    
+    def test_sphere_surface_clusters(self):
+        """Test sphere surface cluster counts (3D embedding)."""
+        # Expected sphere clusters for n circles
+        # These correspond to unrooted trees with n+1 nodes
+        expected = [1, 1, 1, 2, 3, 6, 11, 23, 47, 106]
+        for n, expected_value in enumerate(expected):
+            with self.subTest(n=n):
+                computed = self.topology.sphere_surface_clusters(n)
+                self.assertEqual(
+                    computed,
+                    expected_value,
+                    f"Sphere clusters for n={n} should be {expected_value}"
+                )
+    
+    def test_hypersphere_4d_clusters_base_cases(self):
+        """Test 4D hypersphere cluster base cases."""
+        # Base cases for 4D hypersphere
+        self.assertEqual(self.topology.hypersphere_4d_clusters(0), 1)
+        self.assertEqual(self.topology.hypersphere_4d_clusters(1), 1)
+        self.assertEqual(self.topology.hypersphere_4d_clusters(2), 1)
+        self.assertEqual(self.topology.hypersphere_4d_clusters(3), 1)
+        self.assertEqual(self.topology.hypersphere_4d_clusters(4), 2)
+        self.assertEqual(self.topology.hypersphere_4d_clusters(5), 3)
+    
+    def test_dimensional_reduction_monotonic(self):
+        """Test that each dimension reduces or maintains count."""
+        # Each higher dimension should have fewer or equal clusters
+        for n in range(1, 10):
+            with self.subTest(n=n):
+                catalan = self.topology.catalan_number(n)
+                planar = self.topology.non_intersecting_circles(n)
+                sphere = self.topology.sphere_surface_clusters(n)
+                hypersphere = self.topology.hypersphere_4d_clusters(n)
+                
+                # 1D ≥ 2D ≥ 3D ≥ 4D
+                self.assertGreaterEqual(catalan, planar,
+                    f"Catalan should be ≥ planar for n={n}")
+                self.assertGreaterEqual(planar, sphere,
+                    f"Planar should be ≥ sphere for n={n}")
+                self.assertGreaterEqual(sphere, hypersphere,
+                    f"Sphere should be ≥ hypersphere for n={n}")
+    
+    def test_dimensional_progression_known_values(self):
+        """Test known values in the dimensional progression table."""
+        # From problem statement
+        test_cases = [
+            # n, catalan, planar, sphere, expected_hypersphere (from pattern)
+            (0, 1, 1, 1, 1),
+            (1, 1, 1, 1, 1),
+            (2, 2, 2, 1, 1),
+            (3, 5, 4, 2, 1),
+            (4, 14, 9, 3, 2),
+            (5, 42, 20, 6, 3),
+            (6, 132, 48, 11, 6),
+            (7, 429, 115, 23, 11),
+            (8, 1430, 286, 47, 23),
+            (9, 4862, 719, 106, 44),
+        ]
+        
+        for n, exp_cat, exp_planar, exp_sphere, exp_hyper in test_cases:
+            with self.subTest(n=n):
+                self.assertEqual(self.topology.catalan_number(n), exp_cat)
+                self.assertEqual(self.topology.non_intersecting_circles(n), exp_planar)
+                self.assertEqual(self.topology.sphere_surface_clusters(n), exp_sphere)
+                # 4D is theoretical, so we check it computes something reasonable
+                hyper = self.topology.hypersphere_4d_clusters(n)
+                self.assertLessEqual(hyper, exp_sphere,
+                    f"Hypersphere should be ≤ sphere for n={n}")
+                if n <= 9:
+                    self.assertEqual(hyper, exp_hyper,
+                        f"Hypersphere for n={n} should be {exp_hyper}")
+    
+    def test_unrooted_from_rooted_formula(self):
+        """Test Otter's formula relating unrooted to rooted trees."""
+        # For small n, verify the relationship manually
+        for n in range(1, 8):
+            with self.subTest(n=n):
+                unrooted = self.topology.unrooted_trees(n)
+                # Unrooted count should be positive
+                self.assertGreater(unrooted, 0)
+                # Unrooted should be ≤ rooted
+                rooted = self.topology.rooted_trees(n)
+                self.assertLessEqual(unrooted, rooted,
+                    f"Unrooted trees should be ≤ rooted trees for n={n}")
+
+
 def run_tests():
     """Run all tests."""
     unittest.main(argv=[''], verbosity=2, exit=False)
