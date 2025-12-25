@@ -1,0 +1,62 @@
+\providecommand{\bysame}{\leavevmode\hbox to3em{\hrulefill}\thinspace}
+\providecommand{\MR}{\relax\ifhmode\unskip\space\fi MR }
+% \MRhref is called by the amsart/book/proc definition of \MR.
+\providecommand{\MRhref}[2]{%
+  \href{http://www.ams.org/mathscinet-getitem?mr=#1}{#2}
+}
+\providecommand{\href}[2]{#2}
+\begin{thebibliography}{10}
+
+\bibitem{AgnewAJM66}
+Ralph~Palmer Agnew, \emph{Euler transformations}, Am. J. Math. \textbf{66}
+  (1944), no.~2, 313--338. \MR{0010618}
+
+\bibitem{CayleyPMag4}
+Arthur Cayley, \emph{{XXVIII.} on the theory of the analytical forms called
+  trees}, Philos. Mag. Ser. 4 \textbf{13} (1857), no.~85, 172--176.
+
+\bibitem{Comtet}
+Louis Comtet, \emph{Advanced combinatorics}, Springer, Berlin, Heidelberg, New
+  York, 1974.
+
+\bibitem{DonagheyJCTB22}
+Robert Donaghey, \emph{Restricted plane tree representations of four
+  {Motzkin}-{Catalan} equations}, J. Comb. Theory B \textbf{22} (1977),
+  114--121. \MR{0432532}
+
+\bibitem{Flajolet}
+Philippe Flajolet and Robert Sedgewick, \emph{Analytic combinatorics},
+  Cambridge University Press, 2009. \MR{2483235}
+
+\bibitem{KlarnerJCT9}
+David Klarner, \emph{Correspondences between plane trees and binary sequences},
+  J. Combin. Theory \textbf{9} (1970), 401--411. \MR{0292690}
+
+\bibitem{KnopfmacherAC53}
+J.~Knopfmacher and M.~E. Mays, \emph{Compositions with $m$ distinct parts}, Ars
+  Combin. \textbf{53} (1999), 111--128. \MR{1724493}
+
+\bibitem{LerouxASMQ16}
+Pierre Leroux and Brahim Miloudi, \emph{G\'en\'eralisations de la formule
+  d'{Otter}}, Ann. Sci. Math. Qu\'ebec \textbf{16} (1992), no.~1, 53--80.
+  \MR{1173933}
+
+\bibitem{MatharVixra1504}
+Richard~J. Mathar, \emph{Smallest symmetric supergroups of the abstract groups
+  up to order 37}, vixra:1504.0032 (2015).
+
+\bibitem{PolyaAA68}
+G.~P\'olya, \emph{Kombinatorische {A}nzahlbestimmungen f\"ur {G}ruppen,
+  {G}raphen und chemische {V}erbindungen}, Acta Arith. \textbf{68} (1937),
+  no.~1, 145--254. \MR{1577579}
+
+\bibitem{EIS}
+Neil J.~A. Sloane, \emph{The {O}n-{L}ine {E}ncyclopedia {O}f {I}nteger
+  {S}equences}, Notices Am.\ Math.\ Soc. \textbf{50} (2003), no.~8, 912--915,
+  http://oeis.org/. \MR{1992789 (2004f:11151)}
+
+\bibitem{Stanley}
+Richard~P. Stanley, \emph{Enumerative combinatorics}, 2 ed., vol.~1, Cambridge
+  University Press, 2011. \MR{1442260}
+
+\end{thebibliography}
