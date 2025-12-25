@@ -10,7 +10,7 @@ The main questions addressed:
 2. How many different topologies exist when triples may intersect?
 """
 
-from typing import List, Tuple, Dict
+from typing import List, Dict
 from functools import lru_cache
 
 
@@ -206,8 +206,6 @@ def main():
     """
     Main function to demonstrate the circle topology analysis.
     """
-    topology = CircleTopology()
-    
     print("Topologically Distinct Sets of Non-intersecting Circles")
     print("=" * 60)
     print()
@@ -217,7 +215,7 @@ def main():
     print("-" * 60)
     max_n = 10
     for n in range(max_n + 1):
-        count = topology.non_intersecting_circles(n)
+        count = CircleTopology.non_intersecting_circles(n)
         print(f"n={n:2d}: {count:6d} distinct topologies")
     print()
     
@@ -225,7 +223,7 @@ def main():
     print("Case (i): Pairs of circles may intersect")
     print("-" * 60)
     for n in range(max_n + 1):
-        count = topology.pairs_may_intersect(n)
+        count = CircleTopology.pairs_may_intersect(n)
         print(f"n={n:2d}: {count:6d} distinct topologies")
     print()
     
@@ -233,16 +231,16 @@ def main():
     print("Case (ii): Triples of circles may intersect")
     print("-" * 60)
     for n in range(max_n + 1):
-        count = topology.triples_may_intersect(n)
+        count = CircleTopology.triples_may_intersect(n)
         print(f"n={n:2d}: {count:6d} distinct topologies")
     print()
     
     # Display generating function coefficients
     print("Generating Function Coefficients (first 8 terms)")
     print("-" * 60)
-    gf_none = topology.generating_function_coefficients(7, 'none')
-    gf_pairs = topology.generating_function_coefficients(7, 'pairs')
-    gf_triples = topology.generating_function_coefficients(7, 'triples')
+    gf_none = CircleTopology.generating_function_coefficients(7, 'none')
+    gf_pairs = CircleTopology.generating_function_coefficients(7, 'pairs')
+    gf_triples = CircleTopology.generating_function_coefficients(7, 'triples')
     
     print("Non-intersecting: ", [gf_none[i] for i in range(8)])
     print("Pairs intersect:  ", [gf_pairs[i] for i in range(8)])
