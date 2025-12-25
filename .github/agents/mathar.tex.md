@@ -1,4 +1,7 @@
-
+---
+name: "mathar.tex"
+description: ""
+---
 
 \documentclass[]{amsart}
 \usepackage{graphicx}
