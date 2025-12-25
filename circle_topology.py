@@ -12,7 +12,6 @@ The main questions addressed:
 
 from typing import List, Tuple, Dict
 from functools import lru_cache
-import itertools
 
 
 class CircleTopology:
