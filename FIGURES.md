@@ -39,6 +39,67 @@ from circle_topology import CircleTopology
 print(CircleTopology.non_intersecting_circles(6))  # Output: 48
 ```
 
+### Extended Figures (C7.eps, C8.eps, C9.eps)
+
+The implementation now supports generating EPS diagrams for larger values of N,
+following the same pattern as C4-C6. These diagrams show the flip transformation
+graphs for 7, 8, and 9 circles.
+
+**Generation:**
+```bash
+# Generate all EPS files (C4-C9)
+python generate_eps.py
+
+# Generate specific figures
+python generate_eps.py 7 8 9
+```
+
+**Expected counts:**
+
+| Figure | Circles | Rooted Trees (A000081) | Free Tree Clusters (A000055) |
+|--------|---------|------------------------|------------------------------|
+| C7 | 7 | 115 | 23 |
+| C8 | 8 | 286 | 47 |
+| C9 | 9 | 719 | 106 |
+
+**Verification:**
+```python
+from flip_transforms import generate_rooted_trees, find_flip_clusters
+
+# C7: 115 expressions -> 23 clusters
+exprs = list(generate_rooted_trees(8))  # 7 circles = 8 nodes
+clusters = find_flip_clusters(exprs)
+print(f"C7: {len(exprs)} expressions, {len(clusters)} clusters")
+
+# C8: 286 expressions -> 47 clusters
+exprs = list(generate_rooted_trees(9))
+clusters = find_flip_clusters(exprs)
+print(f"C8: {len(exprs)} expressions, {len(clusters)} clusters")
+
+# C9: 719 expressions -> 106 clusters
+exprs = list(generate_rooted_trees(10))
+clusters = find_flip_clusters(exprs)
+print(f"C9: {len(exprs)} expressions, {len(clusters)} clusters")
+```
+
+## Flip Transformation Algorithm
+
+The flip transformation corresponds to re-rooting the tree representation
+of nested circles. When circles are embedded on a sphere, topologies that
+differ only by which circle is considered the "root" become equivalent.
+
+**Algorithm:**
+1. Parse expression into tree structure (list of children)
+2. For each top-level factor, re-root the tree at that factor
+3. The re-rooting operation:
+   - Target factor becomes the new root
+   - Its children stay with it
+   - The path from the old root becomes a chain of children in reverse
+4. Convert back to canonical expression string
+
+**Key insight:** Only top-level factors are flipped, not nested sub-expressions.
+This produces exactly the edges shown in the paper's C4-C6 figures.
+
 ## Sequence Verification
 
 ### Non-Intersecting Circles (Table 2 in Paper)
