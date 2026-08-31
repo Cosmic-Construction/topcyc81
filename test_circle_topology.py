@@ -285,6 +285,91 @@ class TestDimensionalProgression(unittest.TestCase):
                     f"Unrooted trees should be ≤ rooted trees for n={n}")
 
 
+class TestFlipTransformations(unittest.TestCase):
+    """Test flip transformation and clustering (OEIS A000055 verification)."""
+    
+    def test_generate_rooted_trees(self):
+        """Test that generate_rooted_trees produces correct counts (A000081)."""
+        from flip_transforms import generate_rooted_trees
+        
+        # First terms of A000081
+        expected = [0, 1, 1, 2, 4, 9, 20, 48, 115, 286]
+        for n, expected_count in enumerate(expected):
+            if n == 0:
+                continue  # Skip n=0 (empty)
+            with self.subTest(n=n):
+                trees = generate_rooted_trees(n)
+                self.assertEqual(
+                    len(trees),
+                    expected_count,
+                    f"generate_rooted_trees({n}) should return {expected_count} trees"
+                )
+    
+    def test_flip_clusters_c4(self):
+        """Test C4 gives 3 clusters (9 rooted trees -> 3 free trees)."""
+        from flip_transforms import generate_rooted_trees, find_flip_clusters
+        exprs = list(generate_rooted_trees(5))  # 4 circles = 5 nodes
+        clusters = find_flip_clusters(exprs)
+        self.assertEqual(len(exprs), 9, "C4 should have 9 expressions")
+        self.assertEqual(len(clusters), 3, "C4 should have 3 clusters")
+    
+    def test_flip_clusters_c5(self):
+        """Test C5 gives 6 clusters (20 rooted trees -> 6 free trees)."""
+        from flip_transforms import generate_rooted_trees, find_flip_clusters
+        exprs = list(generate_rooted_trees(6))  # 5 circles = 6 nodes
+        clusters = find_flip_clusters(exprs)
+        self.assertEqual(len(exprs), 20, "C5 should have 20 expressions")
+        self.assertEqual(len(clusters), 6, "C5 should have 6 clusters")
+    
+    def test_flip_clusters_c6(self):
+        """Test C6 gives 11 clusters (48 rooted trees -> 11 free trees)."""
+        from flip_transforms import generate_rooted_trees, find_flip_clusters
+        exprs = list(generate_rooted_trees(7))  # 6 circles = 7 nodes
+        clusters = find_flip_clusters(exprs)
+        self.assertEqual(len(exprs), 48, "C6 should have 48 expressions")
+        self.assertEqual(len(clusters), 11, "C6 should have 11 clusters")
+    
+    def test_flip_clusters_c7(self):
+        """Test C7 gives 23 clusters (115 rooted trees -> 23 free trees)."""
+        from flip_transforms import generate_rooted_trees, find_flip_clusters
+        exprs = list(generate_rooted_trees(8))  # 7 circles = 8 nodes
+        clusters = find_flip_clusters(exprs)
+        self.assertEqual(len(exprs), 115, "C7 should have 115 expressions")
+        self.assertEqual(len(clusters), 23, "C7 should have 23 clusters")
+    
+    def test_flip_clusters_c8(self):
+        """Test C8 gives 47 clusters (286 rooted trees -> 47 free trees)."""
+        from flip_transforms import generate_rooted_trees, find_flip_clusters
+        exprs = list(generate_rooted_trees(9))  # 8 circles = 9 nodes
+        clusters = find_flip_clusters(exprs)
+        self.assertEqual(len(exprs), 286, "C8 should have 286 expressions")
+        self.assertEqual(len(clusters), 47, "C8 should have 47 clusters")
+    
+    def test_flip_clusters_c9(self):
+        """Test C9 gives 106 clusters (719 rooted trees -> 106 free trees)."""
+        from flip_transforms import generate_rooted_trees, find_flip_clusters
+        exprs = list(generate_rooted_trees(10))  # 9 circles = 10 nodes
+        clusters = find_flip_clusters(exprs)
+        self.assertEqual(len(exprs), 719, "C9 should have 719 expressions")
+        self.assertEqual(len(clusters), 106, "C9 should have 106 clusters")
+    
+    def test_flip_clusters_match_unrooted_trees(self):
+        """Test that cluster counts match OEIS A000055 for all n."""
+        from flip_transforms import generate_rooted_trees, find_flip_clusters
+        from circle_topology import CircleTopology
+        
+        for n in range(1, 10):
+            with self.subTest(n=n):
+                exprs = list(generate_rooted_trees(n + 1))
+                clusters = find_flip_clusters(exprs)
+                expected = CircleTopology.unrooted_trees(n + 1)
+                self.assertEqual(
+                    len(clusters),
+                    expected,
+                    f"C{n} should have {expected} clusters (A000055)"
+                )
+
+
 def run_tests():
     """Run all tests."""
     unittest.main(argv=[''], verbosity=2, exit=False)

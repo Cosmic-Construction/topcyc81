@@ -77,6 +77,40 @@ This will display:
 - Counts for case (ii): triples may intersect
 - Generating function coefficients
 
+### Generating EPS Diagrams
+
+The repository includes Graphviz-generated EPS diagrams showing flip
+transformation graphs for circle topologies (matching Figures 1-3 in the paper).
+
+```bash
+# Generate all EPS files (C4-C9)
+python generate_eps.py
+
+# Generate specific figures
+python generate_eps.py 7 8 9
+```
+
+This generates:
+- **C4.eps**: 9 expressions → 3 clusters
+- **C5.eps**: 20 expressions → 6 clusters
+- **C6.eps**: 48 expressions → 11 clusters
+- **C7.eps**: 115 expressions → 23 clusters
+- **C8.eps**: 286 expressions → 47 clusters
+- **C9.eps**: 719 expressions → 106 clusters
+
+Requirements: Graphviz (`dot` command) must be installed.
+
+### Analyzing Flip Transformations
+
+```bash
+python flip_transforms.py
+```
+
+This shows the flip transformation analysis for C4, including:
+- All 9 expressions
+- The 3 equivalence clusters
+- Cluster sizes and membership
+
 ### Using as a Module
 
 ```python
@@ -132,6 +166,7 @@ The test suite includes:
 - Tests for base cases and recurrence relations
 - Consistency checks across different methods
 - Validation that intersection freedom increases counts
+- **Flip transformation clustering** (C4-C9 verified against A000055)
 
 ## API Reference
 
