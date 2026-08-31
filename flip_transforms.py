@@ -3,174 +3,230 @@ Visualization utilities for circle topology transformations.
 
 This module provides tools to visualize and analyze flip transformations
 of circle topologies, as described in Section 2.2 of the paper.
+
+The flip transformation corresponds to re-rooting the tree representation
+of nested circles. When circles are embedded on a sphere, topologies that
+differ only by which circle is considered the "root" become equivalent.
 """
 
 from typing import List, Set, Tuple, Dict
+from functools import lru_cache
 from circle_topology import CircleTopology
 
 
-class CircleExpression:
+@lru_cache(maxsize=None)
+def generate_rooted_trees(n: int) -> Tuple[str, ...]:
     """
-    Represents a circle topology using nested parentheses notation.
+    Generate all unlabeled rooted trees with n nodes as nested parentheses.
     
-    The notation uses '(' and ')' to represent circles, where matching
-    pairs represent a single circle boundary.
+    For n circles, use generate_rooted_trees(n+1) since the expressions
+    represent trees with n+1 nodes (n circles plus the implicit root/plane).
+    
+    Args:
+        n: Number of nodes in the tree (including root)
+        
+    Returns:
+        Tuple of canonical expression strings, sorted lexicographically
+        
+    Verification:
+        len(generate_rooted_trees(n)) == OEIS A000081(n)
     """
+    if n == 0:
+        return ()
+    if n == 1:
+        return ('',)  # Just the root, no children
     
-    def __init__(self, expr: str):
-        """Initialize with a parentheses expression."""
-        self.expr = expr.strip()
-        self._validate()
+    results = set()
     
-    def _validate(self):
-        """Validate that the expression is well-formed."""
-        depth = 0
-        for c in self.expr:
-            if c == '(':
-                depth += 1
-            elif c == ')':
-                depth -= 1
-                if depth < 0:
-                    raise ValueError(f"Invalid expression: {self.expr}")
-        if depth != 0:
-            raise ValueError(f"Unmatched parentheses: {self.expr}")
+    def generate_forests(remaining: int, max_size: int, current: List[str]):
+        if remaining == 0:
+            # Sort children to canonicalize (order doesn't matter for unlabeled trees)
+            forest = tuple(sorted(current, reverse=True))
+            expr = ''.join(f'({t})' for t in forest)
+            results.add(expr)
+            return
+        for size in range(min(remaining, max_size), 0, -1):
+            for tree in generate_rooted_trees(size):
+                generate_forests(remaining - size, size, current + [tree])
     
-    def count_circles(self) -> int:
-        """Count the number of circle pairs in the expression."""
-        return self.expr.count('(')
+    generate_forests(n - 1, n - 1, [])
+    return tuple(sorted(results))
+
+
+def expr_to_tree(expr: str) -> List:
+    """
+    Convert a parentheses expression to a tree structure.
     
-    def factor_count(self) -> int:
-        """
-        Count the number of factors (top-level groups).
-        
-        A factor is a maximal well-formed subexpression at depth 0.
-        """
-        factors = 0
-        depth = 0
-        for c in self.expr:
-            if c == '(':
-                if depth == 0:
-                    factors += 1
-                depth += 1
-            elif c == ')':
-                depth -= 1
-        return factors
+    The tree is represented as a list of children, where each child
+    is itself a tree (list of children).
     
-    def flip_transform(self) -> Set[str]:
-        """
-        Generate all expressions reachable by flip transformations.
+    Args:
+        expr: Nested parentheses expression
         
-        A flip transformation moves a factor to the outside by wrapping
-        all other factors and reversing inside/outside.
-        
-        Returns:
-            Set of expression strings reachable by flip operations
-        """
-        if not self.expr:
-            return {self.expr}
-        
-        # Parse into factors
-        factors = self._parse_factors()
-        
-        if len(factors) == 0:
-            return {self.expr}
-        
-        if len(factors) == 1:
-            # Single factor - can only flip itself
-            # This is the identity unless we can unwrap and rewrap
-            return {self.expr}
-        
-        # Generate flips by moving each factor outside
-        results = {self.expr}  # Include original
-        
-        for i in range(len(factors)):
-            # Take factor i and wrap all others
-            other_factors = factors[:i] + factors[i+1:]
-            if other_factors:
-                flipped = f"({' '.join(other_factors)}) {factors[i]}"
-                # Normalize spacing
-                flipped = flipped.replace(' ', '')
-                results.add(flipped)
-        
-        return results
+    Returns:
+        Tree structure as nested lists
+    """
+    if not expr:
+        return []
     
-    def _parse_factors(self) -> List[str]:
-        """
-        Parse the expression into top-level factors.
+    trees = []
+    depth = 0
+    start = 0
+    for i, c in enumerate(expr):
+        if c == '(':
+            if depth == 0:
+                start = i
+            depth += 1
+        elif c == ')':
+            depth -= 1
+            if depth == 0:
+                subtree = expr_to_tree(expr[start + 1:i])
+                trees.append(subtree)
+    return trees
+
+
+def tree_to_expr(tree: List) -> str:
+    """
+    Convert a tree structure back to canonical parentheses expression.
+    
+    Children are sorted in reverse order to ensure canonical form.
+    
+    Args:
+        tree: Tree structure as nested lists
         
-        Returns:
-            List of factor expressions
-        """
-        factors = []
-        depth = 0
-        current = []
+    Returns:
+        Canonical expression string
+    """
+    sorted_children = sorted(tree, key=lambda t: tree_to_expr(t), reverse=True)
+    return ''.join(f'({tree_to_expr(sub)})' for sub in sorted_children)
+
+
+def _get_node_at_path(tree: List, path: List[int]) -> List:
+    """Get the node at the given path in the tree."""
+    for i in path:
+        tree = tree[i]
+    return tree
+
+
+def _build_chain(chain: List[Tuple[List, int]], bottom: List) -> List:
+    """
+    Build the reversed chain from the bottom up for re-rooting.
+    
+    Args:
+        chain: List of (parent_tree, child_index) pairs from root to target
+        bottom: The bottom-most subtree
         
-        for c in self.expr:
-            if c == '(':
-                if depth == 0 and current:
-                    # New factor starting
-                    factors.append(''.join(current))
-                    current = []
-                current.append(c)
-                depth += 1
-            elif c == ')':
-                depth -= 1
-                current.append(c)
-                if depth == 0:
-                    # Factor complete
-                    factors.append(''.join(current))
-                    current = []
+    Returns:
+        The rebuilt chain with bottom attached
+    """
+    if not chain:
+        return bottom
+    
+    parent_tree, parent_idx = chain[-1]
+    # Remove the branch that leads down to the target
+    parent_without_branch = parent_tree[:parent_idx] + parent_tree[parent_idx + 1:]
+    # Add the bottom as a child
+    new_parent = parent_without_branch + [bottom]
+    
+    return _build_chain(chain[:-1], new_parent)
+
+
+def re_root_at_path(tree: List, path: List[int]) -> List:
+    """
+    Re-root the tree at the node given by path.
+    
+    This implements the flip transformation: the target node becomes the
+    new root, its children stay with it, and the path from the old root
+    becomes a chain of children in reverse.
+    
+    Args:
+        tree: Original tree structure
+        path: List of indices navigating to the target node
         
-        return factors
+    Returns:
+        New tree with target as root
+    """
+    if not path:
+        return tree
     
-    def __str__(self):
-        return self.expr
+    target = _get_node_at_path(tree, path)
     
-    def __repr__(self):
-        return f"CircleExpression('{self.expr}')"
+    # Build chain from root to target (excluding target)
+    chain = []
+    current = tree
+    for i in path:
+        chain.append((current, i))
+        current = current[i]
     
-    def __eq__(self, other):
-        if isinstance(other, CircleExpression):
-            return self.expr == other.expr
-        return False
+    # New root children = target's original children + reversed chain
+    new_root_children = list(target)
     
-    def __hash__(self):
-        return hash(self.expr)
+    if chain:
+        parent_tree, parent_idx = chain[-1]
+        parent_without_target = parent_tree[:parent_idx] + parent_tree[parent_idx + 1:]
+        new_child = _build_chain(chain[:-1], parent_without_target)
+        new_root_children.append(new_child)
+    
+    return new_root_children
+
+
+def flip_top_level(expr: str) -> Set[str]:
+    """
+    Generate all expressions reachable by flip transformations.
+    
+    The flip operation re-roots the tree at each top-level factor.
+    Only top-level factors are flipped, not nested sub-expressions.
+    This produces exactly the edges shown in the paper's C4-C6 figures.
+    
+    Args:
+        expr: Parentheses expression string
+        
+    Returns:
+        Set of expression strings reachable by flip operations
+    """
+    tree = expr_to_tree(expr)
+    results = {tree_to_expr(tree)}  # Include original
+    
+    for i in range(len(tree)):
+        new_tree = re_root_at_path(tree, [i])
+        results.add(tree_to_expr(new_tree))
+    
+    return results
 
 
 def find_flip_clusters(expressions: List[str]) -> List[Set[str]]:
     """
     Find clusters of expressions connected by flip transformations.
     
+    Uses BFS to find connected components in the flip graph.
+    
     Args:
         expressions: List of circle expressions as strings
         
     Returns:
         List of sets, where each set contains expressions in the same cluster
+        
+    Verification:
+        For n circles, len(find_flip_clusters(expressions)) should equal
+        OEIS A000055(n+1) - the number of unrooted trees with n+1 nodes.
     """
-    # Build adjacency graph
-    expr_objs = [CircleExpression(e) for e in expressions]
-    
-    # Find all reachable expressions from each starting point
+    expr_set = set(expressions)
     visited = set()
     clusters = []
     
-    for expr in expr_objs:
-        if expr.expr in visited:
+    for expr in expressions:
+        if expr in visited:
             continue
         
         # BFS to find all connected expressions
         cluster = set()
-        queue = [expr.expr]
-        cluster.add(expr.expr)
+        queue = [expr]
+        cluster.add(expr)
         
         while queue:
             current = queue.pop(0)
-            ce = CircleExpression(current)
-            
-            # Get all flip transformations
-            for flipped in ce.flip_transform():
-                if flipped not in cluster and flipped in expressions:
+            for flipped in flip_top_level(current):
+                if flipped in expr_set and flipped not in cluster:
                     cluster.add(flipped)
                     queue.append(flipped)
         
@@ -178,25 +234,6 @@ def find_flip_clusters(expressions: List[str]) -> List[Set[str]]:
         clusters.append(cluster)
     
     return clusters
-
-
-def generate_c4_expressions() -> List[str]:
-    """
-    Generate all 9 expressions for C_4 (4 circles).
-    
-    Returns the expressions shown in the paper's Figure 1.
-    """
-    return [
-        '()()()()',  # 4 factors
-        '(())()()',  # 3 factors
-        '((()))()',  # 2 factors
-        '(()())()',  # 2 factors
-        '((()()))',  # 1 factor
-        '(())(())',  # 2 factors
-        '((())())',  # 1 factor
-        '(()()())',  # 1 factor
-        '(((())))',  # 1 factor
-    ]
 
 
 def analyze_flip_structure(n: int) -> Dict[str, any]:
@@ -207,25 +244,19 @@ def analyze_flip_structure(n: int) -> Dict[str, any]:
         n: Number of circles
         
     Returns:
-        Dictionary with analysis results
+        Dictionary with analysis results including clusters
     """
-    # For now, we provide the known cases from the paper
-    if n == 4:
-        exprs = generate_c4_expressions()
-        clusters = find_flip_clusters(exprs)
-        return {
-            'n': n,
-            'total_topologies': len(exprs),
-            'clusters': clusters,
-            'num_clusters': len(clusters),
-            'cluster_sizes': [len(c) for c in clusters]
-        }
-    else:
-        return {
-            'n': n,
-            'total_topologies': CircleTopology.non_intersecting_circles(n),
-            'note': 'Cluster analysis not yet implemented for this n'
-        }
+    # Generate all expressions for n circles (trees with n+1 nodes)
+    exprs = list(generate_rooted_trees(n + 1))
+    clusters = find_flip_clusters(exprs)
+    
+    return {
+        'n': n,
+        'total_topologies': len(exprs),
+        'clusters': clusters,
+        'num_clusters': len(clusters),
+        'cluster_sizes': sorted([len(c) for c in clusters], reverse=True)
+    }
 
 
 def print_flip_analysis(n: int = 4):
@@ -240,22 +271,18 @@ def print_flip_analysis(n: int = 4):
     print(f"Flip Transformation Analysis for {n} circles")
     print("=" * 60)
     print(f"Total topologies: {analysis['total_topologies']}")
-    
-    if 'num_clusters' in analysis:
-        print(f"Number of flip-equivalence clusters: {analysis['num_clusters']}")
-        print(f"Cluster sizes: {analysis['cluster_sizes']}")
-        print()
-        print("Clusters:")
-        for i, cluster in enumerate(analysis['clusters'], 1):
-            print(f"  Cluster {i} (size {len(cluster)}):")
-            for expr in sorted(cluster):
-                ce = CircleExpression(expr)
-                print(f"    {expr} [{ce.factor_count()} factors]")
-        print()
-        print("Note: Each cluster represents circle topologies that are")
-        print("equivalent when embedded on a sphere surface.")
-    else:
-        print(f"Note: {analysis.get('note', 'No additional analysis available')}")
+    print(f"Number of flip-equivalence clusters: {analysis['num_clusters']}")
+    print(f"Cluster sizes: {analysis['cluster_sizes']}")
+    print()
+    print("Clusters:")
+    for i, cluster in enumerate(analysis['clusters'], 1):
+        print(f"  Cluster {i} (size {len(cluster)}):")
+        for expr in sorted(cluster):
+            tree = expr_to_tree(expr)
+            print(f"    {expr} [{len(tree)} factors]")
+    print()
+    print("Note: Each cluster represents circle topologies that are")
+    print("equivalent when embedded on a sphere surface.")
 
 
 if __name__ == "__main__":
