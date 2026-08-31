@@ -282,10 +282,12 @@ def print_flip_analysis(n: int = 4):
             tree = expr_to_tree(expr)
             print(f"    {expr} [{len(tree)} factors]")
     print()
-    print("Note: Each cluster represents circle topologies that are")
-    print("equivalent when embedded on a sphere surface.")
+    print("Note: Each cluster represents circle topologies that are equivalent when embedded on a sphere surface.")
 
 
 if __name__ == "__main__":
-    # Demo the flip transformation analysis
-    print_flip_analysis(4)
+    # Demo the flip transformation analysis for C1-C9
+    for n in range(1, 10):
+        print_flip_analysis(n)
+        if n < 9:
+            print()

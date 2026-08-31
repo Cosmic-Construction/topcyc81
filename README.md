@@ -106,9 +106,9 @@ Requirements: Graphviz (`dot` command) must be installed.
 python flip_transforms.py
 ```
 
-This shows the flip transformation analysis for C4, including:
-- All 9 expressions
-- The 3 equivalence clusters
+This shows the flip transformation analysis for C1-C9, including:
+- All expressions for each number of circles
+- The equivalence clusters
 - Cluster sizes and membership
 
 ### Using as a Module
