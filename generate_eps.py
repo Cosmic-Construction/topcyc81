@@ -40,9 +40,10 @@ def generate_dot_file(n: int, output_path: Path) -> Tuple[int, int]:
     
     # Build edge set (undirected, so we canonicalize edge direction)
     edges: Set[Tuple[str, str]] = set()
+    expr_set = set(expressions)  # Build once, reuse in loop
     for expr in expressions:
         for flipped in flip_top_level(expr):
-            if flipped != expr and flipped in set(expressions):
+            if flipped != expr and flipped in expr_set:
                 # Canonicalize edge direction to avoid duplicates
                 edge = tuple(sorted([expr, flipped]))
                 edges.add(edge)

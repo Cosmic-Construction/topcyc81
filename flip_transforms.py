@@ -10,6 +10,7 @@ differ only by which circle is considered the "root" become equivalent.
 """
 
 from typing import List, Set, Tuple, Dict
+from collections import deque
 from functools import lru_cache
 from circle_topology import CircleTopology
 
@@ -220,11 +221,11 @@ def find_flip_clusters(expressions: List[str]) -> List[Set[str]]:
         
         # BFS to find all connected expressions
         cluster = set()
-        queue = [expr]
+        queue = deque([expr])
         cluster.add(expr)
         
         while queue:
-            current = queue.pop(0)
+            current = queue.popleft()
             for flipped in flip_top_level(current):
                 if flipped in expr_set and flipped not in cluster:
                     cluster.add(flipped)
