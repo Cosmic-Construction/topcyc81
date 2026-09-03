@@ -108,18 +108,25 @@ When up to three circles may mutually intersect, six new fundamental topologies 
   - Generating function coefficient computation
 
 - **`flip_transforms.py`**: Flip transformation analysis
-  - `CircleExpression`: Class for manipulating parenthesis expressions
+  - `generate_rooted_trees(n)`: Generates all rooted trees with n nodes as canonical parenthesis expressions (A000081)
+  - `expr_to_tree()` / `tree_to_expr()`: Convert between expressions and tree structures
+  - `re_root_at_path()` / `flip_top_level()`: Re-root trees to perform flip transformations
   - `find_flip_clusters()`: Groups topologies by flip equivalence
   - Visualization utilities for understanding sphere embeddings
+
+- **`generate_eps.py`**: EPS diagram generator (requires Graphviz)
+  - Generates DOT files and EPS diagrams for C4-C9 flip transformation graphs
+  - Usage: `python generate_eps.py [n ...]` (default: all of C4-C9)
 
 ### Testing and Documentation
 
 - **`test_circle_topology.py`**: Comprehensive test suite
-  - 19 unit tests covering all major functions
+  - 27 unit tests covering all major functions
   - Validation against known OEIS sequences (A000108, A000081, A000055)
   - Dimensional progression tests (1D→2D→3D→4D)
   - Recurrence relation tests
   - Otter's formula verification
+  - Flip transformation cluster tests (C4-C9 verified against A000055)
 
 - **`README.md`**: User documentation with examples
 
