@@ -111,6 +111,8 @@ This shows the flip transformation analysis for C1-C9, including:
 - The equivalence clusters
 - Cluster sizes and membership
 
+The same analysis is recorded for every Cn with n < 10 in [EXPRESSIONS.md](EXPRESSIONS.md): EPS/DOT counts (form A), cluster-size summaries (form B), and cluster membership with each flip written as `A (B)` → `(A) B` (form C).
+
 ### Using as a Module
 
 ```python

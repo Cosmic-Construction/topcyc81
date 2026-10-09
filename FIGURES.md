@@ -8,16 +8,16 @@ This document explains how the PostScript figures from the paper correspond to o
 
 The paper shows 9 planar topologies of 4 non-intersecting circles grouped into 3 clusters:
 
-**Planar topologies (9 total):**
-```
-()()()(())     (())()()      ((()))()
-(()()())       ((()()))      (())(())
-((())())       (()()())      (((())))
-```
+**Planar topologies (9 total), grouped by flip cluster:**
+
+- size 3: `(((())))`, `((()))()`, `(())(())`
+- size 4: `((()()))`, `((())())`, `(()())()`, `(())()()`
+- size 2: `(()()())`, `()()()()`
 
 **Sphere clusters (3 total):**
 - Verified by: `CircleTopology.non_intersecting_circles(4)` → 9
 - Sphere count from OEIS A000055: 3
+- Complete A/B/C tables for every Cn with n < 10: [EXPRESSIONS.md](EXPRESSIONS.md)
 
 ### Figure 2 (C5.eps): 5 Circles → 6 Sphere Clusters
 
@@ -29,6 +29,8 @@ from circle_topology import CircleTopology
 print(CircleTopology.non_intersecting_circles(5))  # Output: 20
 ```
 
+The 20 expressions and their 6 flip clusters are listed in [EXPRESSIONS.md](EXPRESSIONS.md).
+
 ### Figure 3 (C6.eps): 6 Circles → 11 Sphere Clusters
 
 The paper shows 48 planar topologies of 6 non-intersecting circles grouped into 11 clusters:
@@ -38,6 +40,8 @@ The paper shows 48 planar topologies of 6 non-intersecting circles grouped into 
 from circle_topology import CircleTopology
 print(CircleTopology.non_intersecting_circles(6))  # Output: 48
 ```
+
+The 48 expressions and their 11 flip clusters are listed in [EXPRESSIONS.md](EXPRESSIONS.md).
 
 ### Extended Figures (C7.eps, C8.eps, C9.eps)
 
@@ -53,6 +57,8 @@ python generate_eps.py
 # Generate specific figures
 python generate_eps.py 7 8 9
 ```
+
+The same counts, together with every parentheses expression and every flip of the form `A (B)` → `(A) B`, are tabulated for C1–C9 in [EXPRESSIONS.md](EXPRESSIONS.md).
 
 **Expected counts:**
 
