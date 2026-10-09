@@ -1,0 +1,10 @@
+graph C_2 {
+  node [shape=ellipse, fontname="Times-Roman", fontsize=14];
+  edge [color=black];
+  graph [bgcolor=white];
+
+  "(())";
+  "()()";
+
+  "(())" -- "()()";
+}

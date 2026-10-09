@@ -5,7 +5,11 @@ This module tests the algorithms for counting topologically distinct
 sets of circles with various intersection constraints.
 """
 
+import re
+import tempfile
 import unittest
+from pathlib import Path
+
 from circle_topology import CircleTopology
 
 
@@ -368,6 +372,200 @@ class TestFlipTransformations(unittest.TestCase):
                     expected,
                     f"C{n} should have {expected} clusters (A000055)"
                 )
+
+
+class TestCnExpressionDocs(unittest.TestCase):
+    """EXPRESSIONS.md records forms A, B, and C for every Cn with n < 10."""
+
+    DOC_PATH = Path(__file__).resolve().parent / 'EXPRESSIONS.md'
+    ARXIV = Path(__file__).resolve().parent / 'arXiv-1603.00077v2'
+    FLIP_RE = re.compile(
+        r'^source=(.*?) \| factor=(\d+) \| A=(.*?) \| B=(.*?) \| '
+        r'form=(.*?) \| image=(.*?)(?: \| fixed)?$'
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.doc = cls.DOC_PATH.read_text()
+        cls.section_a = cls.doc.split('## A —', 1)[1].split('## B —', 1)[0]
+        cls.section_b = cls.doc.split('## B —', 1)[1].split('## C —', 1)[0]
+
+    @staticmethod
+    def _section_c(doc, n):
+        marker = f'### C{n}\n'
+        start = doc.index(marker) + len(marker)
+        rest = doc[start:]
+        nxt = rest.find('\n### C')
+        return rest if nxt == -1 else rest[:nxt]
+
+    @staticmethod
+    def _factors(expr):
+        spans = []
+        depth = 0
+        start = 0
+        for i, char in enumerate(expr):
+            if char == '(':
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif char == ')':
+                depth -= 1
+                if depth == 0:
+                    spans.append(expr[start:i + 1])
+        return spans
+
+    @staticmethod
+    def _dot_edges(text):
+        edges = set()
+        for line in text.splitlines():
+            if ' -- ' not in line:
+                continue
+            left, right = line.split(' -- ', 1)
+            src = left.strip().strip('"')
+            dst = right.strip().rstrip(';').strip().strip('"')
+            edges.add(tuple(sorted((src, dst))))
+        return edges
+
+    def test_forms_a_b_c_cover_every_cn_below_10(self):
+        """Forms A, B, and C are present for each Cn with 1 <= n < 10."""
+        self.assertIn('## A — EPS Diagram Generation', self.doc)
+        self.assertIn('## B — Cluster Size Summaries', self.doc)
+        self.assertIn('## C — Cluster Membership and Flips of the Form A (B)', self.doc)
+        for n in range(1, 10):
+            self.assertIn(f'### C{n}\n', self.doc)
+
+    def test_paper_flip_examples(self):
+        """The introductory table records the paper's A (B) examples."""
+        self.assertIn(
+            '| `()()()` | any `()` | `()()` | empty | `()()()` | `(()())` |',
+            self.doc,
+        )
+        self.assertIn(
+            '| `(())()` | the `()` factor | `(())` | empty | `(())()` | `((()))` |',
+            self.doc,
+        )
+
+    def test_form_a_matches_generator_counts(self):
+        """Form A lists the rooted, cluster, node, and edge counts."""
+        from flip_transforms import analyze_flip_structure
+
+        for n in range(1, 10):
+            analysis = analyze_flip_structure(n)
+            rooted = analysis['total_topologies']
+            clusters = analysis['num_clusters']
+            with self.subTest(n=n):
+                self.assertIn(
+                    f'  C{n}: {rooted} rooted trees, {clusters} clusters',
+                    self.section_a,
+                )
+                dot_text = (self.ARXIV / f'C{n}.dot').read_text()
+                edges = len(self._dot_edges(dot_text))
+                self.assertIn(
+                    f'  Generated C{n}.dot: {rooted} nodes, {edges} edges',
+                    self.section_a,
+                )
+                self.assertIn(
+                    f'| C{n} | {rooted} | {clusters} | {rooted} | {edges} |',
+                    self.doc,
+                )
+
+    def test_form_b_cluster_sizes(self):
+        """Form B repeats the descending cluster-size summaries."""
+        from flip_transforms import analyze_flip_structure
+
+        for n in range(1, 10):
+            analysis = analyze_flip_structure(n)
+            with self.subTest(n=n):
+                self.assertIn(
+                    f'Flip Transformation Analysis for {n} circles',
+                    self.section_b,
+                )
+                self.assertIn(
+                    f"Total topologies: {analysis['total_topologies']}",
+                    self.section_b,
+                )
+                self.assertIn(
+                    f"Number of flip-equivalence clusters: {analysis['num_clusters']}",
+                    self.section_b,
+                )
+                self.assertIn(
+                    f"Cluster sizes: {analysis['cluster_sizes']}",
+                    self.section_b,
+                )
+
+    def test_form_c_membership_and_a_b_flips(self):
+        """Form C lists every expression and every factor flip A (B) -> (A) B."""
+        from flip_transforms import (
+            analyze_flip_structure,
+            expr_to_tree,
+            flip_top_level,
+            generate_rooted_trees,
+            tree_to_expr,
+        )
+
+        for n in range(1, 10):
+            section = self._section_c(self.doc, n)
+            analysis = analyze_flip_structure(n)
+            expressions = list(generate_rooted_trees(n + 1))
+            with self.subTest(n=n):
+                self.assertIn(
+                    f"Cluster sizes: {analysis['cluster_sizes']}",
+                    section,
+                )
+                listed = []
+                for line in section.splitlines():
+                    if line.startswith('    ') and line.endswith(' factors]'):
+                        expr = line.strip().split(' [', 1)[0]
+                        factors = len(expr_to_tree(expr))
+                        self.assertEqual(line, f'    {expr} [{factors} factors]')
+                        listed.append(expr)
+                self.assertEqual(sorted(listed), sorted(expressions))
+
+                seen = {}
+                undirected = set()
+                for line in section.splitlines():
+                    if not line.startswith('source='):
+                        continue
+                    match = self.FLIP_RE.match(line)
+                    self.assertIsNotNone(match, f'unparsed flip line: {line}')
+                    source, factor_s, a_part, b_part, form, image = match.groups()
+                    factor = int(factor_s)
+                    facs = self._factors(source)
+                    self.assertEqual(''.join(facs[:factor - 1] + facs[factor:]), a_part)
+                    self.assertEqual(facs[factor - 1][1:-1], b_part)
+                    self.assertEqual(form, f'{a_part}({b_part})')
+                    expected = tree_to_expr(expr_to_tree(f'({a_part}){b_part}'))
+                    self.assertEqual(image, expected)
+                    self.assertIn(image, flip_top_level(source))
+                    fixed = line.endswith(' | fixed')
+                    self.assertEqual(fixed, image == source)
+                    seen.setdefault(source, set()).add(factor)
+                    if not fixed:
+                        undirected.add(tuple(sorted((source, image))))
+
+                for expr in expressions:
+                    self.assertEqual(
+                        seen.get(expr),
+                        set(range(1, len(self._factors(expr)) + 1)),
+                        f'missing factor flips for {expr}',
+                    )
+                dot_edges = self._dot_edges((self.ARXIV / f'C{n}.dot').read_text())
+                self.assertEqual(undirected, dot_edges)
+
+    def test_dot_files_match_generator_for_n_below_10(self):
+        """Committed DOT graphs for C1-C9 match generate_dot_file."""
+        from generate_eps import generate_dot_file
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            for n in range(1, 10):
+                generated = tmp_path / f'C{n}.dot'
+                generate_dot_file(n, generated)
+                committed = self.ARXIV / f'C{n}.dot'
+                with self.subTest(n=n):
+                    self.assertTrue(committed.is_file(), f'C{n}.dot missing')
+                    self.assertTrue((self.ARXIV / f'C{n}.eps').is_file())
+                    self.assertEqual(committed.read_text(), generated.read_text())
 
 
 def run_tests():

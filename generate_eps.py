@@ -10,6 +10,7 @@ Usage:
     python generate_eps.py          # Generate all EPS files (C4-C9)
     python generate_eps.py 7        # Generate only C7.eps
     python generate_eps.py 7 8 9    # Generate C7, C8, C9
+    python generate_eps.py 1 2 3 4 5 6 7 8 9  # every Cn with n < 10
 
 Requirements:
     - Graphviz (dot command) must be installed

@@ -116,7 +116,7 @@ When up to three circles may mutually intersect, six new fundamental topologies 
 
 - **`generate_eps.py`**: EPS diagram generator (requires Graphviz)
   - Generates DOT files and EPS diagrams for C4-C9 flip transformation graphs
-  - Usage: `python generate_eps.py [n ...]` (default: all of C4-C9)
+  - Usage: `python generate_eps.py [n ...]` (default: all of C4-C9; `1` through `9` covers every Cn with n < 10)
 
 ### Testing and Documentation
 
@@ -129,6 +129,11 @@ When up to three circles may mutually intersect, six new fundamental topologies 
   - Flip transformation cluster tests (C4-C9 verified against A000055)
 
 - **`README.md`**: User documentation with examples
+
+- **`EXPRESSIONS.md`**: Technical catalog of parentheses expressions for every Cn with n < 10
+  - Form A: EPS/DOT generation counts (nodes, edges, rooted trees, clusters)
+  - Form B: flip-equivalence cluster size summaries
+  - Form C: cluster membership and every factor flip of the form `A (B)` → `(A) B`
 
 - **`requirements.txt`**: No external dependencies (Python stdlib only)
 
