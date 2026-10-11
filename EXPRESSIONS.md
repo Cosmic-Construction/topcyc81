@@ -23,6 +23,8 @@ Three views are recorded below, in the forms used to check the implementation, f
 - **B** — flip-equivalence cluster size summaries
 - **C** — cluster membership, each expression with its factor count, and every factor flip written as `A (B)` → `(A) B`
 
+Each expression also has a Matula-Göbel number and an integer partition index. Those labels are not repeated in the forms below. `python flip_transforms.py` prints them on the same clusters: the brace-set on a cluster is its Matula numbers, and each expression line adds the partition index and the prime word, as in `((())) [1 factors]: [3] : p3 = 5`. The Matula clusters are orthogonal to the partition index for n < 4 and transverse to it after that. See [IMPLEMENTATION.md](IMPLEMENTATION.md).
+
 Reproduce the counts with:
 
 ```bash

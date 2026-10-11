@@ -7,9 +7,16 @@ of circle topologies, as described in Section 2.2 of the paper.
 The flip transformation corresponds to re-rooting the tree representation
 of nested circles. When circles are embedded on a sphere, topologies that
 differ only by which circle is considered the "root" become equivalent.
+
+Each parentheses expression is also a rooted tree, so it has a Matula-Göbel
+number (OEIS A061773) and an integer partition index given by the sizes of
+its top-level factors. Flip clusters are sets of those Matula numbers. That
+clustering is orthogonal to the partition index for fewer than 4 circles and
+transverse to it after that.
 """
 
-from typing import List, Set, Tuple, Dict
+import math
+from typing import Dict, List, NamedTuple, Set, Tuple
 from collections import deque
 from functools import lru_cache
 from circle_topology import CircleTopology
@@ -171,6 +178,392 @@ def re_root_at_path(tree: List, path: List[int]) -> List:
     return new_root_children
 
 
+_PRIMES: List[int] = []
+
+
+def nth_prime(k: int) -> int:
+    """
+    Return the k-th prime, 1-based, so nth_prime(1) is 2.
+
+    Used as the prime map in the Matula-Göbel encoding: p_k = nth_prime(k).
+
+    Args:
+        k: Prime index, starting at 1
+
+    Returns:
+        The k-th prime
+    """
+    if k < 1:
+        raise ValueError("prime index must be a positive integer")
+    if len(_PRIMES) >= k:
+        return _PRIMES[k - 1]
+    # Rosser's theorem: p_n < n (ln n + ln ln n) for n >= 6.
+    if k < 6:
+        limit = 12
+    else:
+        log_k = math.log(k)
+        limit = int(k * (log_k + math.log(log_k))) + 3
+    while True:
+        sieve = bytearray(b"\x01") * (limit + 1)
+        sieve[0] = 0
+        sieve[1] = 0
+        for i in range(2, int(limit ** 0.5) + 1):
+            if sieve[i]:
+                start = i * i
+                count = ((limit - start) // i) + 1
+                sieve[start:limit + 1:i] = b"\x00" * count
+        found = [i for i, flag in enumerate(sieve) if flag]
+        if len(found) >= k:
+            _PRIMES[:] = found
+            return found[k - 1]
+        limit = limit * 2 + 10
+
+
+@lru_cache(maxsize=None)
+def matula_number(expr: str) -> int:
+    """
+    Matula-Göbel number of a parentheses expression, including the implicit root.
+
+    The expression is a forest of top-level factors. The implicit outer root is
+    the plane (the extra node that makes n circles a tree on n+1 nodes). A
+    factor ``(B)`` is the rooted tree whose Matula number is ``matula_number(B)``.
+    If those factor numbers are m1, ..., mk, the expression's Matula number is
+
+        p_{m1} * ... * p_{mk}
+
+    where p_j is the j-th prime (p_1 = 2). The bare root (empty expression) is 1.
+    A single leaf factor ``()`` is p_1 = 2.
+
+    The same product written with indices descending is the prime word used in
+    the cluster tables: ``(())()`` is p2p1 = 3 * 2 = 6.
+
+    Args:
+        expr: Canonical or non-canonical parentheses expression
+
+    Returns:
+        Matula-Göbel number of the rooted tree
+
+    Verification:
+        The numbers for n circles are exactly OEIS A061773, row n+1.
+    """
+    if not expr:
+        return 1
+    product = 1
+    for child in expr_to_tree(expr):
+        product *= nth_prime(matula_number(tree_to_expr(child)))
+    return product
+
+
+def factor_matula_indices(expr: str) -> Tuple[int, ...]:
+    """
+    Matula numbers of the top-level factors, descending.
+
+    These are the indices in the prime word. ``(())()`` has factors of Matula
+    numbers 2 and 1, so the indices are ``(2, 1)`` and the word is ``p2p1``.
+
+    Args:
+        expr: Parentheses expression
+
+    Returns:
+        Descending tuple of factor Matula numbers
+    """
+    indices = [
+        matula_number(tree_to_expr(child))
+        for child in expr_to_tree(expr)
+    ]
+    return tuple(sorted(indices, reverse=True))
+
+
+def format_prime_product(indices: Tuple[int, ...]) -> str:
+    """
+    Write a descending prime-index product as a word such as ``p3p1`` or ``p5``.
+
+    Args:
+        indices: Prime indices, already in the order to print
+
+    Returns:
+        Concatenated ``p``-word. Empty for the bare root.
+    """
+    return "".join(f"p{index}" for index in indices)
+
+
+def _node_count(tree: List) -> int:
+    """Number of nodes in a tree, including its root."""
+    return 1 + sum(_node_count(child) for child in tree)
+
+
+def factor_size_partition(expr: str) -> Tuple[int, ...]:
+    """
+    Integer partition index of an expression: descending top-level factor sizes.
+
+    A factor's size is the number of circles in it (parentheses pairs), which
+    is the number of nodes in that factor's tree. The parts sum to the number
+    of circles. ``((()))()`` is ``(3, 1)``, written ``[3+1]``.
+
+    Args:
+        expr: Parentheses expression
+
+    Returns:
+        Descending partition of the circle count
+    """
+    sizes = [_node_count(child) for child in expr_to_tree(expr)]
+    return tuple(sorted(sizes, reverse=True))
+
+
+def format_partition(parts: Tuple[int, ...]) -> str:
+    """
+    Write a partition as ``[3+1]`` or ``[4]``.
+
+    Args:
+        parts: Partition parts, already in the order to print
+
+    Returns:
+        Bracketed sum. ``[]`` for the empty partition.
+    """
+    return "[" + "+".join(str(part) for part in parts) + "]"
+
+
+def format_matula_set(expressions: Set[str]) -> str:
+    """
+    Sorted Matula numbers of a flip cluster, written ``{5,6}``.
+
+    Args:
+        expressions: Expressions in one flip-equivalence cluster
+
+    Returns:
+        Brace-wrapped comma-separated Matula numbers, ascending
+    """
+    numbers = sorted(matula_number(expr) for expr in expressions)
+    return "{" + ",".join(str(number) for number in numbers) + "}"
+
+
+def format_expression_record(expr: str) -> str:
+    """
+    One catalog line: expression, factor count, partition index, prime word, Matula number.
+
+    ``((()))`` is ``((())) [1 factors]: [3] : p3 = 5``.
+
+    Args:
+        expr: Parentheses expression
+
+    Returns:
+        Record line without leading indent
+    """
+    parts = factor_size_partition(expr)
+    indices = factor_matula_indices(expr)
+    factors = len(indices)
+    return (
+        f"{expr} [{factors} factors]: {format_partition(parts)} : "
+        f"{format_prime_product(indices)} = {matula_number(expr)}"
+    )
+
+
+class PartitionCell(NamedTuple):
+    """Expressions of one partition index inside one Matula cluster."""
+
+    cluster: int
+    matula_set: str
+    expressions: Tuple[str, ...]
+    matulas: Tuple[int, ...]
+    prime_products: Tuple[str, ...]
+
+    @property
+    def count(self) -> int:
+        """Number of expressions in this cell."""
+        return len(self.expressions)
+
+
+class PartitionIncidence(NamedTuple):
+    """One integer partition index and the Matula clusters it meets."""
+
+    partition: Tuple[int, ...]
+    index: str
+    clusters: Tuple[PartitionCell, ...]
+
+
+def partition_incidence(clusters: List[Set[str]]) -> List[PartitionIncidence]:
+    """
+    Group expressions by integer partition index, then by flip cluster.
+
+    Cluster numbers follow discovery order in ``clusters`` (the order returned
+    by ``find_flip_clusters``). Partition indices are listed largest-part first.
+
+    Args:
+        clusters: Flip-equivalence clusters in discovery order
+
+    Returns:
+        One record per partition index, each with the cells that meet it
+    """
+    grouped: Dict[Tuple[int, ...], Dict[int, List[str]]] = {}
+    matula_sets: Dict[int, str] = {}
+    for cluster_index, cluster in enumerate(clusters, 1):
+        matula_sets[cluster_index] = format_matula_set(cluster)
+        for expr in cluster:
+            parts = factor_size_partition(expr)
+            grouped.setdefault(parts, {}).setdefault(cluster_index, []).append(expr)
+
+    items: List[PartitionIncidence] = []
+    for parts in sorted(grouped, reverse=True):
+        cells = []
+        for cluster_index in sorted(grouped[parts]):
+            expressions = tuple(sorted(grouped[parts][cluster_index]))
+            cells.append(PartitionCell(
+                cluster=cluster_index,
+                matula_set=matula_sets[cluster_index],
+                expressions=expressions,
+                matulas=tuple(matula_number(expr) for expr in expressions),
+                prime_products=tuple(
+                    format_prime_product(factor_matula_indices(expr))
+                    for expr in expressions
+                ),
+            ))
+        items.append(PartitionIncidence(
+            partition=parts,
+            index=format_partition(parts),
+            clusters=tuple(cells),
+        ))
+    return items
+
+
+def _plural(count: int, singular: str, plural: str = "") -> str:
+    """Return ``1 cluster`` or ``2 clusters``."""
+    word = singular if count == 1 else (plural or singular + "s")
+    return f"{count} {word}"
+
+
+def format_partition_orthogonality(n: int, clusters: List[Set[str]]) -> str:
+    """
+    Describe how Matula clusters sit across the integer partition index.
+
+    The two labels of an expression are independent classifications of the
+    set of expressions. A partition index such as ``[3]`` can meet several
+    Matula clusters, and one cluster can contain several partition indices.
+    Combinatorial orthogonality is the stronger condition that every
+    cluster/partition cell has at most one expression. That holds for
+    n < 4 and fails from n = 4, when a free tree first has two expressions
+    of the same partition index.
+
+    Args:
+        n: Number of circles
+        clusters: Flip clusters in discovery order
+
+    Returns:
+        Multiline report, without a trailing newline
+    """
+    incidence = partition_incidence(clusters)
+    lines = [
+        "Integer partition index vs Matula clusters:",
+        "  The partition index is the descending sizes of the top-level factors.",
+        "  Each cluster is the set of Matula numbers of one free tree.",
+    ]
+    partitions_meeting_several = 0
+    max_cell = 0
+    oversized = []
+    for item in incidence:
+        cells = item.clusters
+        meets = len(cells)
+        if meets > 1:
+            partitions_meeting_several += 1
+        sets = ", ".join(cell.matula_set for cell in cells)
+        lines.append(
+            f"  Partition index {item.index} meets {_plural(meets, 'Matula cluster')}: {sets}"
+        )
+        for cell in cells:
+            max_cell = max(max_cell, cell.count)
+            if cell.count > 1:
+                details = ", ".join(
+                    f"{product} = {number}"
+                    for product, number in zip(cell.prime_products, cell.matulas)
+                )
+                oversized.append(
+                    f"  Cell larger than 1: partition {item.index} ∩ {cell.matula_set} "
+                    f"has {_plural(cell.count, 'expression')} ({details})."
+                )
+
+    clusters_with_several = 0
+    for cluster in clusters:
+        partitions = {factor_size_partition(expr) for expr in cluster}
+        if len(partitions) > 1:
+            clusters_with_several += 1
+
+    lines.append(f"  Partition index [{n}] meets every Matula cluster.")
+    if partitions_meeting_several and clusters_with_several:
+        lines.append(
+            "  Matula clusters are transverse to the integer partition index: "
+            f"{_plural(partitions_meeting_several, 'partition index', 'partition indices')} "
+            f"{'meets' if partitions_meeting_several == 1 else 'meet'} more than one cluster, "
+            f"and {_plural(clusters_with_several, 'cluster')} "
+            f"{'contains' if clusters_with_several == 1 else 'contain'} more than one partition index."
+        )
+    elif clusters_with_several:
+        lines.append(
+            "  Every partition index lies in a single Matula cluster, "
+            f"but {_plural(clusters_with_several, 'cluster')} "
+            f"{'contains' if clusters_with_several == 1 else 'contain'} more than one partition index."
+        )
+    else:
+        lines.append(
+            "  The Matula clusters and the integer partition index do not yet cross."
+        )
+    lines.extend(oversized)
+    if max_cell <= 1:
+        lines.append(
+            "  Largest cluster/partition cell has 1 expression "
+            "(combinatorially orthogonal)."
+        )
+        lines.append(
+            "  The Matula numbers form clusters orthogonal to the integer partition index."
+        )
+    else:
+        lines.append(
+            f"  Largest cluster/partition cell has {_plural(max_cell, 'expression')} "
+            "(crossing, but not combinatorially orthogonal)."
+        )
+        lines.append(
+            "  The Matula numbers form clusters transverse to the integer partition "
+            "index, but not orthogonal to it: a cluster meets one partition index "
+            "in more than one expression."
+        )
+    return "\n".join(lines)
+
+
+def format_flip_analysis(n: int) -> str:
+    """
+    Full flip analysis, with Matula numbers and the partition-index crossing.
+
+    Args:
+        n: Number of circles
+
+    Returns:
+        Report text, without a trailing newline
+    """
+    analysis = analyze_flip_structure(n)
+    clusters = analysis["clusters"]
+    lines = [
+        f"Flip Transformation Analysis for {n} circles",
+        "=" * 60,
+        f"Total topologies: {analysis['total_topologies']}",
+        f"Number of flip-equivalence clusters: {analysis['num_clusters']}",
+        f"Cluster sizes: {analysis['cluster_sizes']}",
+        "",
+        "Clusters:",
+    ]
+    for i, cluster in enumerate(clusters, 1):
+        lines.append(f"  Cluster {i} (size {len(cluster)}): {format_matula_set(cluster)}")
+        for expr in sorted(cluster):
+            lines.append(f"    {format_expression_record(expr)}")
+    lines.append("")
+    lines.append(format_partition_orthogonality(n, clusters))
+    lines.append("")
+    lines.append(
+        "Note: Each cluster represents circle topologies that are equivalent "
+        "when embedded on a sphere surface. The Matula number labels the rooted "
+        "tree; the brace-set on each cluster is those numbers. The integer "
+        "partition index is a second label of the same expression."
+    )
+    return "\n".join(lines)
+
+
 def flip_top_level(expr: str) -> Set[str]:
     """
     Generate all expressions reachable by flip transformations.
@@ -264,25 +657,14 @@ def print_flip_analysis(n: int = 4):
     """
     Print analysis of flip transformation clusters.
     
+    Each expression is labeled with its integer partition index and its
+    Matula-Göbel number. The report then shows how those Matula clusters
+    sit across the partition index.
+    
     Args:
         n: Number of circles (default 4)
     """
-    analysis = analyze_flip_structure(n)
-    
-    print(f"Flip Transformation Analysis for {n} circles")
-    print("=" * 60)
-    print(f"Total topologies: {analysis['total_topologies']}")
-    print(f"Number of flip-equivalence clusters: {analysis['num_clusters']}")
-    print(f"Cluster sizes: {analysis['cluster_sizes']}")
-    print()
-    print("Clusters:")
-    for i, cluster in enumerate(analysis['clusters'], 1):
-        print(f"  Cluster {i} (size {len(cluster)}):")
-        for expr in sorted(cluster):
-            tree = expr_to_tree(expr)
-            print(f"    {expr} [{len(tree)} factors]")
-    print()
-    print("Note: Each cluster represents circle topologies that are equivalent when embedded on a sphere surface.")
+    print(format_flip_analysis(n))
 
 
 if __name__ == "__main__":

@@ -568,6 +568,179 @@ class TestCnExpressionDocs(unittest.TestCase):
                     self.assertEqual(committed.read_text(), generated.read_text())
 
 
+class TestMatulaNumbers(unittest.TestCase):
+    """Matula-Göbel numbers and their crossing of the integer partition index."""
+
+    # OEIS A061773 rows: Matula-Göbel numbers of rooted trees with n nodes.
+    A061773 = {
+        1: [1],
+        2: [2],
+        3: [3, 4],
+        4: [5, 6, 7, 8],
+        5: [9, 10, 11, 12, 13, 14, 16, 17, 19],
+        6: [15, 18, 20, 21, 22, 23, 24, 26, 28, 29, 31, 32, 34, 37, 38, 41, 43, 53, 59, 67],
+    }
+
+    # Labels annotated on the Cn catalog: partition index, prime word, Matula number.
+    ISSUE_LABELS = {
+        '((()))': ('[3]', 'p3', 5),
+        '(())()': ('[2+1]', 'p2p1', 6),
+        '(()())': ('[3]', 'p4', 7),
+        '()()()': ('[1+1+1]', 'p1p1p1', 8),
+        '(((())))': ('[4]', 'p5', 11),
+        '((()))()': ('[3+1]', 'p3p1', 10),
+        '(())(())': ('[2+2]', 'p2p2', 9),
+        '((()()))': ('[4]', 'p7', 17),
+        '((())())': ('[4]', 'p6', 13),
+        '(()())()': ('[3+1]', 'p4p1', 14),
+        '(())()()': ('[2+1+1]', 'p2p1p1', 12),
+        '(()()())': ('[4]', 'p8', 19),
+        '()()()()': ('[1+1+1+1]', 'p1p1p1p1', 16),
+    }
+
+    def test_nth_prime(self):
+        """The prime map used by the Matula encoding is 1-based."""
+        from flip_transforms import nth_prime
+
+        self.assertEqual(
+            [nth_prime(k) for k in (1, 2, 3, 4, 5, 6, 8, 11, 31)],
+            [2, 3, 5, 7, 11, 13, 19, 31, 127],
+        )
+        with self.assertRaises(ValueError):
+            nth_prime(0)
+
+    def test_issue_expression_labels(self):
+        """C3 and C4 expressions carry the annotated partition and Matula labels."""
+        from flip_transforms import (
+            factor_matula_indices,
+            factor_size_partition,
+            format_partition,
+            format_prime_product,
+            matula_number,
+        )
+
+        for expr, (partition, prime_word, number) in self.ISSUE_LABELS.items():
+            with self.subTest(expr=expr):
+                self.assertEqual(format_partition(factor_size_partition(expr)), partition)
+                self.assertEqual(format_prime_product(factor_matula_indices(expr)), prime_word)
+                self.assertEqual(matula_number(expr), number)
+
+    def test_c3_and_c4_cluster_matula_sets(self):
+        """Flip clusters are the sets of Matula numbers shown for C3 and C4."""
+        from flip_transforms import find_flip_clusters, format_matula_set, generate_rooted_trees
+
+        c3 = find_flip_clusters(list(generate_rooted_trees(4)))
+        self.assertEqual([format_matula_set(cluster) for cluster in c3], ['{5,6}', '{7,8}'])
+
+        c4 = find_flip_clusters(list(generate_rooted_trees(5)))
+        self.assertEqual(
+            [format_matula_set(cluster) for cluster in c4],
+            ['{9,10,11}', '{12,13,14,17}', '{16,19}'],
+        )
+
+    def test_oeis_a061773(self):
+        """Expressions for n circles are the Matula numbers of trees on n+1 nodes."""
+        from flip_transforms import generate_rooted_trees, matula_number
+
+        for nodes, expected in self.A061773.items():
+            with self.subTest(nodes=nodes):
+                numbers = sorted(matula_number(expr) for expr in generate_rooted_trees(nodes))
+                self.assertEqual(numbers, expected)
+
+    def test_prime_word_and_partition_invariants(self):
+        """The prime word multiplies to the Matula number, and the parts sum to n."""
+        from flip_transforms import (
+            factor_matula_indices,
+            factor_size_partition,
+            generate_rooted_trees,
+            matula_number,
+            nth_prime,
+        )
+
+        for n in range(1, 8):
+            numbers = []
+            for expr in generate_rooted_trees(n + 1):
+                indices = factor_matula_indices(expr)
+                product = 1
+                for index in indices:
+                    product *= nth_prime(index)
+                self.assertEqual(product, matula_number(expr))
+                self.assertEqual(sum(factor_size_partition(expr)), n)
+                numbers.append(product)
+            self.assertEqual(len(numbers), len(set(numbers)))
+
+    def test_factor_order_does_not_change_matula_number(self):
+        """Commuting factors keep the Matula number and the canonical prime word."""
+        from flip_transforms import factor_matula_indices, matula_number
+
+        self.assertEqual(matula_number('()(())'), matula_number('(())()'))
+        self.assertEqual(factor_matula_indices('()(())'), (2, 1))
+        self.assertEqual(matula_number(''), 1)
+
+    def test_analysis_shows_clusters_against_partition_index(self):
+        """The report shows Matula clusters orthogonal or transverse to the partition index."""
+        from flip_transforms import format_flip_analysis
+
+        c3 = format_flip_analysis(3)
+        self.assertIn('  Cluster 1 (size 2): {5,6}', c3)
+        self.assertIn('    ((())) [1 factors]: [3] : p3 = 5', c3)
+        self.assertIn('    (())() [2 factors]: [2+1] : p2p1 = 6', c3)
+        self.assertIn('  Cluster 2 (size 2): {7,8}', c3)
+        self.assertIn('    (()()) [1 factors]: [3] : p4 = 7', c3)
+        self.assertIn('    ()()() [3 factors]: [1+1+1] : p1p1p1 = 8', c3)
+        self.assertIn('Partition index [3] meets 2 Matula clusters: {5,6}, {7,8}', c3)
+        self.assertIn(
+            'The Matula numbers form clusters orthogonal to the integer partition index.',
+            c3,
+        )
+        self.assertIn('Total topologies: 4', c3)
+        self.assertIn('Cluster sizes: [2, 2]', c3)
+
+        c4 = format_flip_analysis(4)
+        self.assertIn('    (((()))) [1 factors]: [4] : p5 = 11', c4)
+        self.assertIn('    ((()))() [2 factors]: [3+1] : p3p1 = 10', c4)
+        self.assertIn('    (())(()) [2 factors]: [2+2] : p2p2 = 9', c4)
+        self.assertIn('    ((()())) [1 factors]: [4] : p7 = 17', c4)
+        self.assertIn('    ((())()) [1 factors]: [4] : p6 = 13', c4)
+        self.assertIn('    (()())() [2 factors]: [3+1] : p4p1 = 14', c4)
+        self.assertIn('    (())()() [3 factors]: [2+1+1] : p2p1p1 = 12', c4)
+        self.assertIn('    (()()()) [1 factors]: [4] : p8 = 19', c4)
+        self.assertIn('    ()()()() [4 factors]: [1+1+1+1] : p1p1p1p1 = 16', c4)
+        self.assertIn(
+            'Partition index [4] meets 3 Matula clusters: {9,10,11}, {12,13,14,17}, {16,19}',
+            c4,
+        )
+        self.assertIn(
+            'Partition index [3+1] meets 2 Matula clusters: {9,10,11}, {12,13,14,17}',
+            c4,
+        )
+        self.assertIn(
+            'Cell larger than 1: partition [4] ∩ {12,13,14,17} has 2 expressions (p7 = 17, p6 = 13).',
+            c4,
+        )
+        self.assertIn('2 partition indices meet more than one cluster', c4)
+        self.assertIn('not orthogonal to it', c4)
+        self.assertIn('Cluster sizes: [4, 3, 2]', c4)
+
+    def test_crossing_pattern_for_every_cn_below_10(self):
+        """Partition [n] meets every cluster; orthogonality holds only for n < 4."""
+        from flip_transforms import format_flip_analysis
+
+        for n in range(1, 10):
+            report = format_flip_analysis(n)
+            with self.subTest(n=n):
+                self.assertIn(f'Partition index [{n}] meets every Matula cluster.', report)
+                if n < 4:
+                    self.assertIn(
+                        'The Matula numbers form clusters orthogonal to the integer partition index.',
+                        report,
+                    )
+                else:
+                    self.assertIn('not orthogonal to it', report)
+                if n >= 3:
+                    self.assertIn('transverse to the integer partition index', report)
+
+
 def run_tests():
     """Run all tests."""
     unittest.main(argv=[''], verbosity=2, exit=False)
