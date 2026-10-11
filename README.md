@@ -108,10 +108,16 @@ python flip_transforms.py
 
 This shows the flip transformation analysis for C1-C9, including:
 - All expressions for each number of circles
-- The equivalence clusters
+- The equivalence clusters, each as a set of Matula-Göbel numbers
+- The integer partition index of every expression (descending top-level factor sizes)
+- How those Matula clusters sit across the partition index
 - Cluster sizes and membership
 
-The same analysis is recorded for every Cn with n < 10 in [EXPRESSIONS.md](EXPRESSIONS.md): EPS/DOT counts (form A), cluster-size summaries (form B), and cluster membership with each flip written as `A (B)` → `(A) B` (form C).
+A parentheses expression is a rooted tree on n+1 nodes, so it has a Matula-Göbel number (OEIS A061773, row n+1). The number is the product of the primes indexed by the Matula numbers of the top-level factors; that product is written `p3p1`, `p5`, and so on. The partition index is the same factors measured by circle count: `[3+1]`, `[4]`, `[1+1+1+1]`.
+
+Those two labels classify the expressions differently. For n < 4 the Matula clusters are orthogonal to the partition index: every cluster/partition cell has one expression. From n = 4 they still cut across each other (the partition `[n]` meets every cluster), but a cell can hold more than one expression, so the classifications are transverse rather than orthogonal.
+
+The counts, membership, and flips of the form `A (B)` → `(A) B` are recorded for every Cn with n < 10 in [EXPRESSIONS.md](EXPRESSIONS.md) (forms A, B, and C). The Matula labels and the crossing are what `python flip_transforms.py` prints on top of that membership.
 
 ### Using as a Module
 
@@ -249,6 +255,7 @@ All recursive functions use `@lru_cache` for memoization, ensuring efficient com
 
 - Original paper: [arXiv:1603.00077](https://arxiv.org/abs/1603.00077) - "Topologically Distinct Sets of Non-intersecting Circles in the Plane"
 - Catalan numbers: [OEIS A000108](https://oeis.org/A000108)
+- Matula-Göbel numbers of rooted trees: [OEIS A061773](https://oeis.org/A061773)
 - Related to matching forests and nested structures in combinatorics
 
 ## License

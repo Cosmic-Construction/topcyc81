@@ -63,6 +63,23 @@ When circles are embedded on a sphere surface instead of the plane, topologies t
 
 These sphere counts follow OEIS A000055 (unrooted/free trees).
 
+### Matula Numbers and the Integer Partition Index
+
+Each parentheses expression is the forest of children of the implicit root (the plane). Its Matula-Göbel number is the product of the primes indexed by the Matula numbers of those factors. The empty forest is 1, and a leaf factor `()` is the first prime, 2. The same product written with indices descending is the prime word: `(())()` is `p2p1` = 3 × 2 = 6.
+
+The integer partition index is those same factors measured by how many circles they contain, written largest part first: `((()))()` is `[3+1]`. It is a partition of n, not of the Matula number.
+
+Flip-equivalence clusters are sets of Matula numbers (the rooted representatives of one free tree). That classification is not the partition index:
+
+| n | orthogonal (every cell size ≤ 1) | how the labels cross |
+|---|----------------------------------|----------------------|
+| 1 | yes | a single expression |
+| 2 | yes | the one cluster holds both partitions |
+| 3 | yes | `[3]` meets `{5,6}` and `{7,8}` |
+| ≥ 4 | no | `[n]` meets every cluster; some cluster contains two expressions of partition `[n]` |
+
+For 3 circles the two labels are orthogonal coordinates of the four expressions. For 4 circles they still cross — `[4]` meets all three clusters, and `[3+1]` meets two — but cluster `{12,13,14,17}` contains both `p7 = 17` and `p6 = 13`, two expressions of partition `[4]`. `python flip_transforms.py` prints the incidence for every Cn with n < 10.
+
 ### 4D Hypersphere Embedding - Theoretical Extension
 
 A 4D hypersphere provides additional symmetry beyond 3D sphere flips. For tree topologies, this quotients by:
@@ -112,6 +129,9 @@ When up to three circles may mutually intersect, six new fundamental topologies 
   - `expr_to_tree()` / `tree_to_expr()`: Convert between expressions and tree structures
   - `re_root_at_path()` / `flip_top_level()`: Re-root trees to perform flip transformations
   - `find_flip_clusters()`: Groups topologies by flip equivalence
+  - `matula_number(expr)`: Matula-Göbel number of the expression, including the implicit plane root (OEIS A061773)
+  - `factor_size_partition(expr)`: Integer partition index, the descending sizes of the top-level factors
+  - `format_flip_analysis(n)`: Cluster membership plus the crossing of Matula clusters and partition indices
   - Visualization utilities for understanding sphere embeddings
 
 - **`generate_eps.py`**: EPS diagram generator (requires Graphviz)

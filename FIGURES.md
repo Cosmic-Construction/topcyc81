@@ -18,6 +18,7 @@ The paper shows 9 planar topologies of 4 non-intersecting circles grouped into 3
 - Verified by: `CircleTopology.non_intersecting_circles(4)` → 9
 - Sphere count from OEIS A000055: 3
 - Complete A/B/C tables for every Cn with n < 10: [EXPRESSIONS.md](EXPRESSIONS.md)
+- Matula numbers and the integer partition index of the same clusters: `python flip_transforms.py`
 
 ### Figure 2 (C5.eps): 5 Circles → 6 Sphere Clusters
 
